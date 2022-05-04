@@ -1,3 +1,6 @@
+mycmd_msgs.cc
+mycmd_msgs.h
+
 # Prerequisites
 *.d
 

@@ -1,8 +1,16 @@
+#include <config.h>
+
+#include <asiolink/asio_wrapper.h>
+#include <asiolink/io_service.h>
+#include <asiolink/tls_socket.h>
+#include <cc/command_interpreter.h>
+#include <dhcp/pkt4.h>
+#include <dhcpsrv/cfgmgr.h>
 #include <hooks/hooks.h>
 #include <http/client.h>
 #include <http/response_json.h>
 
-#include "hb0715_log.h"
+#include "mycmd_log.h"
 
 using namespace isc;
 
@@ -65,7 +73,7 @@ extern "C" {
         http::HttpClientPtr cli = boost::make_shared<http::HttpClient>(*ev);
         cli->asyncSendRequest(url, asiolink::TlsContextPtr(), hreq, jresp,
                 [&ev](const boost::system::error_code& code, const http::HttpResponsePtr& ptr, const std::string& msg){
-                LOG_INFO(mycmd::mycmd_logger, MYCMD_LOG_HTTP_CB).arg(code).arg(ptr->getStatusCode());
+                LOG_INFO(mycmd::mycmd_logger, MYCMD_LOG_HTTP_CB).arg(code.value()).arg(static_cast<uint16_t>(ptr->getStatusCode()));
                 ev->stopWork();
                 });
         ev->run();
