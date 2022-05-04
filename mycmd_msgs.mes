@@ -1,0 +1,5 @@
+% MYCMD_MOD_LOAD Hook library MyCmd load success
+
+% MYCMD_MOD_UNLOAD Hook library MyCmd unload success
+
+% MYCMD_LOG_HTTP_CB Asio HttpClient callback IoCode(%1) HttpCode(%2)
