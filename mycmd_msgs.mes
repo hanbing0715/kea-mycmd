@@ -2,4 +2,10 @@
 
 % MYCMD_MOD_UNLOAD Hook library MyCmd unload success
 
+% MYCMD_MOD_ENTER_PHASE Enter phase %1
+
+% MYCMD_MOD_LEAVE_PHASE Leave phase %1
+
+% MYCMD_LOG_HTTP_POLL Asio HttpClient is polling
+
 % MYCMD_LOG_HTTP_CB Asio HttpClient callback AsioCode(%1) HttpCode(%2)

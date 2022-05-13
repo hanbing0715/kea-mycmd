@@ -14,12 +14,28 @@
 
 using namespace isc;
 
+namespace isc {
+    namespace mycmd {
+        asiolink::IOServicePtr aio;
+        http::HttpClientPtr hcli;
+    }
+}
+
 extern "C" {
     int version() {
         return KEA_HOOKS_VERSION;
     }
 
     int multi_threading_compatible() {
+        return 0;
+    }
+
+    int dhcp4_srv_configured(hooks::CalloutHandle& ctx) {
+        LOG_INFO(mycmd::mycmd_logger, MYCMD_MOD_ENTER_PHASE).arg("dhcp4_srv_configured");
+        ctx.getArgument("io_context", mycmd::aio);
+        mycmd::hcli = boost::make_shared<http::HttpClient>(*(mycmd::aio));
+        mycmd::hcli->start();
+        LOG_INFO(mycmd::mycmd_logger, MYCMD_MOD_LEAVE_PHASE).arg("dhcp4_srv_configured");
         return 0;
     }
 
@@ -69,14 +85,14 @@ extern "C" {
         http::HttpRequestPtr hreq = boost::make_shared<http::HttpRequest>(http::HttpRequest::Method::HTTP_GET, url.getPath(), http::HttpVersion::HTTP_11(), http::HostHttpHeader("172.16.0.10"));
         hreq->finalize();
         http::HttpResponseJsonPtr jresp = boost::make_shared<http::HttpResponseJson>();
-        asiolink::IOServicePtr ev = boost::make_shared<asiolink::IOService>();
-        http::HttpClientPtr cli = boost::make_shared<http::HttpClient>(*ev);
-        cli->asyncSendRequest(url, asiolink::TlsContextPtr(), hreq, jresp,
-                [&ev](const boost::system::error_code& code, const http::HttpResponsePtr& ptr, const std::string& msg){
+        mycmd::hcli->asyncSendRequest(url, asiolink::TlsContextPtr(), hreq, jresp,
+                [](const boost::system::error_code& code, const http::HttpResponsePtr& ptr, const std::string& msg){
                 LOG_INFO(mycmd::mycmd_logger, MYCMD_LOG_HTTP_CB).arg(code.value()).arg(static_cast<uint16_t>(ptr->getStatusCode()));
-                ev->stopWork();
-                });
-        ev->run();
+        });
+        do {
+            mycmd::aio->run_one();
+            LOG_INFO(mycmd::mycmd_logger, MYCMD_LOG_HTTP_POLL);
+        } while(!(jresp->isFinalized()));
         resp = config::createAnswer(config::CONTROL_RESULT_SUCCESS, jresp->getBodyAsJson());
         ctx.setArgument("response", resp);
         return 0;
