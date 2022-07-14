@@ -18,6 +18,7 @@ namespace isc {
     namespace mycmd {
         asiolink::IOServicePtr aio;
         http::HttpClientPtr hcli;
+        std::string url;
     }
 }
 
@@ -81,8 +82,9 @@ extern "C" {
 
     int call(hooks::CalloutHandle& ctx) {
         data::ConstElementPtr resp;
-        http::Url url("http://172.16.0.10:80/cmdb/v1/machines");
-        http::HttpRequestPtr hreq = boost::make_shared<http::HttpRequest>(http::HttpRequest::Method::HTTP_GET, url.getPath(), http::HttpVersion::HTTP_11(), http::HostHttpHeader("172.16.0.10"));
+        http::Url url(mycmd::url);
+        http::HttpRequestPtr hreq = boost::make_shared<http::HttpRequest>(http::HttpRequest::Method::HTTP_GET, url.getPath(), http::HttpVersion::HTTP_11(), http::HostHttpHeader(url.getStrippedHostname()));
+        hreq->context()->headers_.push_back(http::HttpHeaderContext("User-Agent", "kea-hooks-mycmd/0.1"));
         hreq->finalize();
         http::HttpResponseJsonPtr jresp = boost::make_shared<http::HttpResponseJson>();
         mycmd::hcli->asyncSendRequest(url, asiolink::TlsContextPtr(), hreq, jresp,
@@ -99,6 +101,7 @@ extern "C" {
     }
 
     int load(hooks::LibraryHandle &ctx) {
+        mycmd::url = ctx.getParameter("url")->stringValue();
         ctx.registerCommandCallout("subnet4-list", list);
         ctx.registerCommandCallout("subnet4-get", get);
         ctx.registerCommandCallout("http-call", call);
